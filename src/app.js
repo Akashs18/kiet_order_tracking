@@ -1,7 +1,7 @@
-const express =required('express');
-const path = required ('path');
+const express =require('express');
+const path = require('path');
 
-const sessionConfig = session('./config/session');
+const sessionConfig = require('./config/session');
 
 const app =express();
 
@@ -15,15 +15,14 @@ app.use(express.static(path.join(__dirname,'public')));
 
 //view engine
 app.set('view engine','ejs');
-app.set('view',path.join(__dirname,'views'));
+app.set('views',path.join(__dirname,'views'));
 
 //routes
 app.use('/auth',require('./routes/auth.routes.js'));
-app.use('/order',require('./routes/order.routes.js/index.js'));
+app.use('/orders', require('./routes/order.routes.js'));
 
-app.use('/',(req,res)=>{
-res.redirect('orders');
+app.get('/', (req, res) => {
+  res.redirect('/auth/login');
 });
-
 module.exports =app;
 

@@ -17,13 +17,13 @@ exports.login = async (req,res)=>{
 
     const result = await userModel.findByEmail(email);
 
-    const user = result.row[0];
+    const user = result.rows[0];
 
 if(!user) return res.send(`user not found`);
 
 const vaild= await bcrypt.compare(password,user.password);
-if(!vaild) return res.send(`invail password`);
-
+if (!vaild) return res.send(`invail password`);
+ 
 req.session.user={
     id:user.id,
     email:user.email,

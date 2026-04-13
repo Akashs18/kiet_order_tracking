@@ -1,11 +1,10 @@
-const router = require ('express').Router();
+const router = require('express').Router();
 
-const controller = require ('../controllers/order.controller');
+const controller = require('../controllers/order.controller');
+const { isAuthenticated } = require('../middlewares/auth.middleware');
 
-const {isAuthenticated} =require ('../middleware/auth.middleware');
+router.get('/', isAuthenticated, controller.getOrders);
+router.post('/', isAuthenticated, controller.createOrder);
+router.post('/:id/status', isAuthenticated, controller.updatestatus);
 
-router.get('/',isAuthenticated,controller.getOrders);
-router.post('/',isAuthenticated,controller.createOrder);
-router.post('/:id/status',isAuthenticated,controller,controller.updatestatus);
-
-module.exports= router;
+module.exports = router;
