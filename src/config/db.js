@@ -1,9 +1,9 @@
 const {Pool}= require('pg');
 
 const pool= new Pool({
-    user:process.env.DB_USER,
-    password:process.env.pass,
-    database:process.env.DB_NAME,
+    user:'postgres',
+    password:123456,
+    database:'tracking',
     host:'localhost',
     port:5432,
 });

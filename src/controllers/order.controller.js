@@ -10,7 +10,18 @@ exports.getOrders = async (req, res) => {
         result = await orderModel.getByEmail(req.session.user.email);
     }
 
-    res.render('order/index', { order: result.rows });
+    res.render('orders/index', { orders: result.rows, user: req.session.user });
+};
+
+exports.getOrderById = async (req, res) => {
+    const result = await orderModel.getById(req.params.id);
+    const order = result.rows[0];
+    
+    if (!order) {
+        return res.status(404).send('Order not found');
+    }
+
+    res.render('orders/detail', { order, user: req.session.user });
 };
 
 exports.createOrder = async (req, res) => {
@@ -26,10 +37,10 @@ exports.updatestatus = async (req, res) => {
     const { status } = req.body;
 
     let field = '';
-
     if (status === 'ORDERED') field = 'ordered_at';
-    if (status === 'RECIVED') field = 'recived_at';
-    if (status === 'INVOICE') field = 'invoiced_at';
+    if (status === 'RECEIVED') field = 'received_at';
+    if (status === 'INVOICED') field = 'invoiced_at';
+    if (status === 'DISPATCHED') field = 'dispatched_at';
 
     const result = await orderModel.updateStatus(id, status, field);
 

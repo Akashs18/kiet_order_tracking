@@ -1,1 +1,177 @@
-<h1>login page</h1>
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Orders Dashboard</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      background: #333;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .header a {
+      color: white;
+      text-decoration: none;
+      margin-left: 15px;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    h2 {
+      margin-bottom: 15px;
+    }
+
+    .form-card {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    input, select {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+    }
+
+    button {
+      padding: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+
+    .PENDING { color: gray; }
+    .ORDERED { color: blue; }
+    .RECEIVED { color: orange; }
+    .INVOICED { color: purple; }
+    .DISPATCHED { color: green; }
+
+    .btn {
+      padding: 5px 10px;
+      text-decoration: none;
+      border-radius: 5px;
+      color: white;
+    }
+
+    .view { background: #2196F3; }
+    .logout { background: red; }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- Header -->
+
+  <div class="header">
+    <div>
+      <strong>Order Tracking System</strong>
+    </div>
+
+
+<div>
+  Logged in as: <%= user.email %> (<%= user.role %>)
+  <a href="/auth/logout" class="btn logout">Logout</a>
+</div>
+
+
+  </div>
+
+  <div class="container">
+
+
+<h2>Orders Dashboard</h2>
+
+<!-- Create Order (Admin Only) -->
+<% if (user.role === 'ADMIN') { %>
+  <div class="form-card">
+    <h3>Create Order</h3>
+
+    <form method="POST" action="/orders">
+      <input type="text" name="po_number" placeholder="PO Number" required />
+      <input type="email" name="client_email" placeholder="Client Email" required />
+      <input type="text" name="supplier_name" placeholder="Supplier Name" />
+      <button type="submit">Create</button>
+    </form>
+  </div>
+<% } %>
+
+<!-- Orders Table -->
+<table>
+  <tr>
+    <th>ID</th>
+    <th>PO Number</th>
+    <th>Status</th>
+    <th>Created</th>
+    <th>Action</th>
+  </tr>
+
+  <% if (orders.length === 0) { %>
+    <tr>
+      <td colspan="5">No orders found</td>
+    </tr>
+  <% } %>
+
+  <% orders.forEach(order => { %>
+    <tr>
+      <td><%= order.id %></td>
+      <td><%= order.po_number %></td>
+      <td class="status <%= order.status %>">
+        <%= order.status %>
+      </td>
+      <td><%= order.created_at %></td>
+      <td>
+        <a href="/orders/<%= order.id %>" class="btn view">View</a>
+      </td>
+    </tr>
+  <% }) %>
+
+</table>
+
+
+  </div>
+
+</body>
+</html>
