@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Order Details</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .info {
+      margin-bottom: 20px;
+    }
+
+    .info p {
+      margin: 5px 0;
+    }
+
+    .status {
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    .timeline {
+      margin-top: 30px;
+    }
+
+    .timeline h3 {
+      margin-bottom: 10px;
+    }
+
+    .step {
+      padding: 10px;
+      border-left: 4px solid #ccc;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+
+    .step.active {
+      border-left-color: #4CAF50;
+      background: #eaf7ea;
+    }
+
+    .form-section {
+      margin-top: 30px;
+    }
+
+    select, button {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    button {
+      background: #2196F3;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1976D2;
+    }
+
+    .back {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .back a {
+      text-decoration: none;
+      color: #007bff;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div class="container">
+
+
+<h2>Order Details</h2>
+
+<!-- Order Info -->
+<div class="info">
+  <p><strong>PO Number:</strong> <%= order.po_number %></p>
+  <p><strong>Supplier:</strong> <%= order.supplier_name || 'N/A' %></p>
+  <p><strong>Status:</strong> <span class="status"><%= order.status %></span></p>
+  <p><strong>Created At:</strong> <%= order.created_at %></p>
+</div>
+
+<!-- Timeline -->
+<div class="timeline">
+  <h3>Status Timeline</h3>
+
+  <div class="step <%= order.status === 'PENDING' ? 'active' : '' %>">
+    PENDING <br/>
+    <small><%= order.created_at || '' %></small>
+  </div>
+
+  <div class="step <%= order.ordered_at ? 'active' : '' %>">
+    ORDERED <br/>
+    <small><%= order.ordered_at || '' %></small>
+  </div>
+
+  <div class="step <%= order.received_at ? 'active' : '' %>">
+    RECEIVED <br/>
+    <small><%= order.received_at || '' %></small>
+  </div>
+
+  <div class="step <%= order.invoiced_at ? 'active' : '' %>">
+    INVOICED <br/>
+    <small><%= order.invoiced_at || '' %></small>
+  </div>
+
+  <div class="step <%= order.dispatched_at ? 'active' : '' %>">
+    DISPATCHED <br/>
+    <small><%= order.dispatched_at || '' %></small>
+  </div>
+
+</div>
+
+<!-- Update Status (Admin Only) -->
+<% if (user && user.role === 'ADMIN') { %>
+  <div class="form-section">
+    <h3>Update Status</h3>
+
+    <form method="POST" action="/orders/<%= order.id %>/status">
+      <select name="status" required>
+        <option value="">Select Status</option>
+        <option value="ORDERED">ORDERED</option>
+        <option value="RECEIVED">RECEIVED</option>
+        <option value="INVOICED">INVOICED</option>
+        <option value="DISPATCHED">DISPATCHED</option>
+      </select>
+
+      <button type="submit">Update</button>
+    </form>
+  </div>
+<% } %>
+
+<!-- Back -->
+<div class="back">
+  <a href="/orders">← Back to Orders</a>
+</div>
+
+
+  </div>
+</body>
+</html>
