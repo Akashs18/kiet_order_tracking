@@ -25,9 +25,9 @@ exports.getOrderById = async (req, res) => {
 };
 
 exports.createOrder = async (req, res) => {
-    const { po_number, client_email } = req.body;
+    const { po_number, supplier_name, client_email, expected_delivery_date } = req.body;
 
-    await orderModel.create(po_number, client_email);
+    await orderModel.create(po_number, supplier_name, client_email, expected_delivery_date);
 
     res.redirect('/orders');
 };
