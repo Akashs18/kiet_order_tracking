@@ -40,23 +40,58 @@
     }
 
     .timeline {
-      margin-top: 30px;
+      margin-top: 50px;
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 13px;
+      left: 10%;
+      right: 10%;
+      height: 4px;
+      background: #e0e0e0;
+      z-index: 1;
     }
 
     .timeline h3 {
-      margin-bottom: 10px;
+      position: absolute;
+      top: -40px;
+      left: 0;
+      margin: 0;
     }
 
     .step {
-      padding: 10px;
-      border-left: 4px solid #ccc;
-      margin-bottom: 10px;
-      background: #fafafa;
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      text-align: center;
+      font-size: 14px;
+      color: #999;
+    }
+
+    .step::before {
+      content: '';
+      display: block;
+      width: 25px;
+      height: 25px;
+      background: #e0e0e0;
+      border-radius: 50%;
+      margin: 0 auto 10px auto;
+      border: 4px solid #f4f6f8;
     }
 
     .step.active {
-      border-left-color: #4CAF50;
-      background: #eaf7ea;
+      color: #333;
+      font-weight: bold;
+    }
+
+    .step.active::before {
+      background: #4CAF50;
+      border-color: #eaf7ea;
     }
 
     .form-section {
@@ -102,7 +137,10 @@
 <!-- Order Info -->
 <div class="info">
   <p><strong>PO Number:</strong> <%= order.po_number %></p>
+  <% if (user && user.role === 'ADMIN') { %>
   <p><strong>Supplier:</strong> <%= order.supplier_name || 'N/A' %></p>
+  <% } %>
+  <p><strong>Expected Delivery:</strong> <%= order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString() : 'N/A' %></p>
   <p><strong>Status:</strong> <span class="status"><%= order.status %></span></p>
   <p><strong>Created At:</strong> <%= order.created_at %></p>
 </div>
@@ -111,7 +149,7 @@
 <div class="timeline">
   <h3>Status Timeline</h3>
 
-  <div class="step <%= order.status === 'PENDING' ? 'active' : '' %>">
+  <div class="step <%= order.created_at ? 'active' : '' %>">
     PENDING <br/>
     <small><%= order.created_at || '' %></small>
   </div>

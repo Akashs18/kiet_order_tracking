@@ -44,6 +44,7 @@
     }
 
     input, select {
+      box-sizing: border-box;
       padding: 10px;
       margin: 5px 0;
       width: 100%;
@@ -133,6 +134,7 @@
       <input type="text" name="po_number" placeholder="PO Number" required />
       <input type="email" name="client_email" placeholder="Client Email" required />
       <input type="text" name="supplier_name" placeholder="Supplier Name" />
+      <input type="date" name="expected_delivery_date" required title="Expected Delivery Date" />
       <button type="submit">Create</button>
     </form>
   </div>
