@@ -184,6 +184,7 @@
     <form method="POST" action="/orders/<%= order.id %>/status">
       <select name="status" required>
         <option value="">Select Status</option>
+        <option value="PENDING">PENDING</option>
         <option value="ORDERED">ORDERED</option>
         <option value="RECEIVED">RECEIVED</option>
         <option value="INVOICED">INVOICED</option>

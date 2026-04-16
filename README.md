@@ -87,6 +87,18 @@ CREATE TABLE orders (
     invoiced_at TIMESTAMP
 );
 ```
+#### Supplier Table
+```
+CREATE TABLE IF NOT EXISTS suppliers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    address VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ---
 
