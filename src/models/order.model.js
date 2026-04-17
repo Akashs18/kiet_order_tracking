@@ -32,7 +32,7 @@ exports.searchByEmail = (email, searchQuery) => {
 
 exports.updateStatus =(id,status,field)=>{
     let clearFields = '';
-    const statuses = ['PENDING', 'ORDERED', 'RECEIVED', 'INVOICED', 'DISPATCHED'];
+    const statuses = ['PENDING', 'ORDERED', 'RECEIVED', 'INVOICED', 'DISPATCHED', 'DELIVERED'];
     const statusIndex = statuses.indexOf(status);
     
     if (statusIndex > 0) {
@@ -43,7 +43,7 @@ exports.updateStatus =(id,status,field)=>{
         }
     } else if (status === 'PENDING') {
         // For PENDING, clear all timestamps
-        clearFields = ', ordered_at = NULL, received_at = NULL, invoiced_at = NULL, dispatched_at = NULL';
+        clearFields = ', ordered_at = NULL, received_at = NULL, invoiced_at = NULL, dispatched_at = NULL, delivered_at = NULL';
     }
 
     if (field) {

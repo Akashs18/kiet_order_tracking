@@ -21,6 +21,7 @@
       --status-received: #f59e0b;
       --status-invoiced: #8b5cf6;
       --status-dispatched: #10b981;
+      --status-delivered: #06b6d4;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -231,6 +232,7 @@
     .status-RECEIVED { background: #fef3c7; color: var(--status-received); }
     .status-INVOICED { background: #ede9fe; color: var(--status-invoiced); }
     .status-DISPATCHED { background: #d1fae5; color: var(--status-dispatched); }
+    .status-DELIVERED { background: #cffafe; color: var(--status-delivered); }
 
     /* Dashboard Stats */
     .stats-grid {
@@ -333,11 +335,11 @@
         <div class="card" style="padding: 0;">
           <div style="padding: 20px 24px; border-bottom: 1px solid var(--border);">
             <h3 style="margin: 0; margin-bottom: 16px;">All Orders <% if (searchQuery) { %><span style="font-size: 14px; color: #64748b; font-weight: 400;">- Search: "<%= searchQuery %>"</span><% } %></h3>
-            <form method="GET" action="/orders" style="display: flex; gap: 10px; max-width: 400px;">
+            <form method="GET" action="/orders#orders" style="display: flex; gap: 10px; max-width: 400px;">
               <input type="text" name="search" placeholder="Search by PO Number or Supplier..." style="flex: 1;" value="<%= searchQuery || '' %>" />
               <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Search</button>
               <% if (searchQuery) { %>
-              <a href="/orders" class="btn" style="padding: 10px 20px; background: #e2e8f0; color: #475569; cursor: pointer; text-decoration: none;">Clear</a>
+              <a href="/orders#orders" class="btn" style="padding: 10px 20px; background: #e2e8f0; color: #475569; cursor: pointer; text-decoration: none;">Clear</a>
               <% } %>
             </form>
           </div>

@@ -66,6 +66,7 @@ exports.updatestatus = async (req, res) => {
     if (status === 'RECEIVED') field = 'received_at';
     if (status === 'INVOICED') field = 'invoiced_at';
     if (status === 'DISPATCHED') field = 'dispatched_at';
+    if (status === 'DELIVERED') field = 'delivered_at';
 
     const result = await orderModel.updateStatus(id, status, field);
 
