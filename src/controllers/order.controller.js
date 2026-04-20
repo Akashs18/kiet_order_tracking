@@ -69,12 +69,22 @@ exports.updatestatus = async (req, res) => {
     if (status === 'DELIVERED') field = 'delivered_at';
 
     const result = await orderModel.updateStatus(id, status, field);
+    const order = result.rows[0];
 
-    emailService.sendEmail(
-        result.rows[0].client_email,
-        'order update',
-        `status changed to ${status}`
+    // Send formatted HTML email with order details
+    await emailService.sendOrderNotification(
+        order.client_email,
+        {
+            name: order.client_name || 'Valued Customer'
+        },
+        {
+            orderId: order.po_number,
+            status: status,
+            shippingDate: new Date().toLocaleDateString(),
+            deliveryDate: order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString() : 'N/A',
+            totalAmount: order.total_amount || 0
+        }
     );
 
-    res.redirect('/orders');
+    res.redirect(`/orders/${id}`);
 };

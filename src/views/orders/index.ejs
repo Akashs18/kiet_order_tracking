@@ -70,12 +70,24 @@
       align-items: center;
       gap: 10px;
       color: #cbd5e1;
+      border-right: 4px solid transparent;
+      margin: 2px 0;
     }
 
     .nav-item:hover, .nav-item.active {
       background: var(--sidebar-hover);
       color: white;
       border-right: 4px solid var(--primary);
+    }
+
+    .nav-item svg {
+      flex-shrink: 0;
+      opacity: 0.8;
+      transition: opacity 0.2s ease;
+    }
+
+    .nav-item:hover svg, .nav-item.active svg {
+      opacity: 1;
     }
 
     .main-wrapper {
@@ -237,7 +249,7 @@
     /* Dashboard Stats */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 20px;
       margin-bottom: 30px;
     }
@@ -287,6 +299,12 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         Suppliers
       </div>
+      <a href="/auth/register" style="text-decoration: none; color: inherit;">
+      <div class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><line x1="12" y1="12" x2="12" y2="18"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        Register User
+      </div>
+      </a>
       <% } %>
     </div>
   </aside>
@@ -321,6 +339,18 @@
           <div class="stat-card">
             <span class="stat-title">Dispatched</span>
             <span class="stat-value"><%= orders.filter(o => o.status === 'DISPATCHED').length %></span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Total Tickets</span>
+            <span class="stat-value"><%= (tickets || []).length %></span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Active Tickets</span>
+            <span class="stat-value"><%= (tickets || []).filter(t => ['OPEN', 'IN_PROGRESS'].includes(t.status)).length %></span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Urgent</span>
+            <span class="stat-value"><%= (tickets || []).filter(t => t.priority === 'URGENT').length %></span>
           </div>
         </div>
 
@@ -504,9 +534,11 @@
         </div>
         <% } %>
 
+        <!-- Active Tickets Section -->
         <div class="card" style="padding: 0;">
           <div style="padding: 20px 24px; border-bottom: 1px solid var(--border);">
-            <h3 style="margin: 0;"><% if (user.role === 'ADMIN') { %>All Tickets<% } else { %>My Tickets<% } %></h3>
+            <h3 style="margin: 0;"><% if (user.role === 'ADMIN') { %>Active Tickets<% } else { %>My Active Tickets<% } %></h3>
+            <span style="color: #94a3b8; font-size: 13px;">Open, In Progress, and Resolved tickets</span>
           </div>
           <div style="overflow-x: auto;">
             <table>
@@ -522,10 +554,73 @@
                 </tr>
               </thead>
               <tbody>
-                <% if (tickets && tickets.length === 0) { %>
-                  <tr><td colspan="<% if (user.role === 'ADMIN') { %>7<% } else { %>6<% } %>" style="text-align: center; color: #94a3b8; padding: 30px;">No tickets found</td></tr>
+                <% 
+                  let activeTickets = (tickets || []).filter(t => ['OPEN', 'IN_PROGRESS', 'RESOLVED'].includes(t.status));
+                  if (activeTickets.length === 0) { 
+                %>
+                  <tr><td colspan="<% if (user.role === 'ADMIN') { %>7<% } else { %>6<% } %>" style="text-align: center; color: #94a3b8; padding: 30px;">No active tickets</td></tr>
                 <% } %>
-                <% (tickets || []).forEach(ticket => { %>
+                <% activeTickets.forEach(ticket => { %>
+                  <tr>
+                    <td><strong style="color: #0f172a;">#<%= ticket.id %></strong></td>
+                    <% if (user.role === 'ADMIN') { %>
+                    <td><span style="color: #475569; font-size: 13px;"><%= ticket.name %><br><span style="color: #94a3b8; font-size: 12px;"><%= ticket.email %></span></span></td>
+                    <% } %>
+                    <td><span style="color: #334155;"><%= ticket.title %></span></td>
+                    <td>
+                      <% 
+                        let priorityBg = ticket.priority === 'URGENT' ? '#fecaca' : ticket.priority === 'HIGH' ? '#fed7aa' : ticket.priority === 'MEDIUM' ? '#fef08a' : '#dcfce7';
+                        let priorityColor = ticket.priority === 'URGENT' ? '#dc2626' : ticket.priority === 'HIGH' ? '#d97706' : ticket.priority === 'MEDIUM' ? '#ca8a04' : '#16a34a';
+                      %>
+                      <span class="status-badge" style="background: <%= priorityBg %>; color: <%= priorityColor %>;">
+                        <%= ticket.priority %>
+                      </span>
+                    </td>
+                    <td>
+                      <% 
+                        let statusBg = ticket.status === 'OPEN' ? '#dbeafe' : ticket.status === 'IN_PROGRESS' ? '#fed7aa' : ticket.status === 'RESOLVED' ? '#d1fae5' : '#e5e7eb';
+                        let statusColor = ticket.status === 'OPEN' ? '#0284c7' : ticket.status === 'IN_PROGRESS' ? '#d97706' : ticket.status === 'RESOLVED' ? '#059669' : '#4b5563';
+                      %>
+                      <span class="status-badge" style="background: <%= statusBg %>; color: <%= statusColor %>;">
+                        <%= ticket.status %>
+                      </span>
+                    </td>
+                    <td><span style="color: #64748b; font-size: 13px;"><%= ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : 'N/A' %></span></td>
+                    <td><a href="/tickets/<%= ticket.id %>" class="btn btn-primary btn-sm">View Details</a></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Closed Tickets Section -->
+        <div class="card" style="padding: 0; margin-top: 24px;">
+          <div style="padding: 20px 24px; border-bottom: 1px solid var(--border);">
+            <h3 style="margin: 0;"><% if (user.role === 'ADMIN') { %>Closed Tickets<% } else { %>My Closed Tickets<% } %></h3>
+            <span style="color: #94a3b8; font-size: 13px;">Archived and completed tickets</span>
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ticket ID</th>
+                  <% if (user.role === 'ADMIN') { %><th>Client</th><% } %>
+                  <th>Subject</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 
+                  let closedTickets = (tickets || []).filter(t => t.status === 'CLOSED');
+                  if (closedTickets.length === 0) { 
+                %>
+                  <tr><td colspan="<% if (user.role === 'ADMIN') { %>7<% } else { %>6<% } %>" style="text-align: center; color: #94a3b8; padding: 30px;">No closed tickets</td></tr>
+                <% } %>
+                <% closedTickets.forEach(ticket => { %>
                   <tr>
                     <td><strong style="color: #0f172a;">#<%= ticket.id %></strong></td>
                     <% if (user.role === 'ADMIN') { %>
