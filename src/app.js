@@ -20,6 +20,8 @@ app.set('views',path.join(__dirname,'views'));
 //routes
 app.use('/auth',require('./routes/auth.routes.js'));
 app.use('/orders', require('./routes/order.routes.js'));
+app.use('/suppliers', require('./routes/supplier.routes.js'));
+app.use('/tickets', require('./routes/ticket.routes.js'));
 
 app.get('/', (req, res) => {
   res.redirect('/auth/login');
