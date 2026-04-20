@@ -136,6 +136,15 @@ CREATE INDEX IF NOT EXISTS idx_ticket_comments_ticket_id ON ticket_comments(tick
 CREATE INDEX IF NOT EXISTS idx_ticket_comments_user_id ON ticket_comments(user_id);
 ```
 
+```
+#### add delivered_at column to orders
+
+-- Migration: Add DELIVERED status support to orders table
+-- Description: Adds delivered_at timestamp column to track when orders are delivered
+
+ALTER TABLE orders ADD COLUMN delivered_at TIMESTAMP DEFAULT NULL;
+
+```
 ---
 
 ## ⚙️ Installation
