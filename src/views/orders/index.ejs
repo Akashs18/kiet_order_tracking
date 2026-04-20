@@ -299,12 +299,10 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         Suppliers
       </div>
-      <a href="/auth/register" style="text-decoration: none; color: inherit;">
-      <div class="nav-item">
+      <div class="nav-item" onclick="switchTab('register', this)">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><line x1="12" y1="12" x2="12" y2="18"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
         Register User
       </div>
-      </a>
       <% } %>
     </div>
   </aside>
@@ -500,6 +498,43 @@
           </div>
         </div>
       </div>
+
+      <!-- View: Register User -->
+      <div id="tab-register" class="tab-content">
+        <div class="card" style="max-width: 800px;">
+          <h3>Register New User</h3>
+          <form method="POST" action="/auth/register">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" placeholder="Enter user full name" required />
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" placeholder="user@example.com" required />
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter password" required />
+              </div>
+              <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" name="confirmPassword" placeholder="Confirm password" required />
+              </div>
+              <div class="form-group">
+                <label>Role</label>
+                <select name="role" style="padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px;">
+                  <option value="CLIENT">Client</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn btn-primary" style="padding: 12px 30px; font-size: 15px;">Register User</button>
+            </div>
+          </form>
+        </div>
+      </div>
       <% } %>
 
       <!-- View: Tickets -->
@@ -681,6 +716,7 @@
         'orders': 'Orders Management',
         'create': 'Create New Order',
         'suppliers': 'Supplier Management',
+        'register': 'Register New User',
         'tickets': 'Support Tickets'
       };
       document.getElementById('page-title').innerText = titles[tabId];
@@ -693,7 +729,7 @@
     // Check if URL has a hash to open a specific tab
     window.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
-      if (['dashboard', 'orders', 'create', 'suppliers', 'tickets'].includes(hash)) {
+      if (['dashboard', 'orders', 'create', 'suppliers', 'register', 'tickets'].includes(hash)) {
         const targetNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick').includes(hash));
         if(targetNav) switchTab(hash, targetNav);
       }
