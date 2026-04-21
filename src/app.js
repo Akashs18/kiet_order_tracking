@@ -1,9 +1,15 @@
 const express =require('express');
 const path = require('path');
+const bcrypt=require('bcrypt');
 
 const sessionConfig = require('./config/session');
 
-const app =express();
+// const app =express();
+// async function hashpassword (){
+// const hash = await bcrypt.hash("123456", 10);
+// console.log(hash);
+// }
+// hashpassword();
 
 //middleware
 app.use(express.json());
