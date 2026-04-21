@@ -1,15 +1,13 @@
+require('dotenv').config();
 const db = require('./src/config/db');
 
 async function run() {
     try {
-        await db.query('ALTER TABLE orders ADD COLUMN expected_delivery_date DATE;');
-        console.log('Successfully added expected_delivery_date column to orders table.');
+        await db.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_email VARCHAR(255);');
+        await db.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS expected_delivery_date DATE;');
+        console.log('Successfully added missing columns to orders table.');
     } catch(err) {
-        if(err.code === '42701') {
-            console.log('Column already exists.');
-        } else {
-            console.error('Error:', err);
-        }
+        console.error('Error adding client_email:', err);
     } finally {
         process.exit();
     }
