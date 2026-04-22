@@ -52,7 +52,22 @@ exports.getOrderById = async (req, res) => {
 exports.createOrder = async (req, res) => {
     const { po_number, supplier_name, client_email, expected_delivery_date } = req.body;
 
-    await orderModel.create(po_number, supplier_name, client_email, expected_delivery_date);
+    const result = await orderModel.create(po_number, supplier_name, client_email, expected_delivery_date);
+    const order = result.rows[0];
+
+    // Send welcome/order created email
+    await emailService.sendOrderNotification(
+        order.client_email,
+        {
+            name: order.client_name || 'Valued Customer'
+        },
+        {
+            orderId: order.po_number,
+            status: 'PENDING',
+            supplierName: supplier_name,
+            deliveryDate: expected_delivery_date ? new Date(expected_delivery_date).toLocaleDateString() : 'N/A',
+        }
+    );
 
     res.redirect('/orders');
 };
@@ -80,7 +95,7 @@ exports.updatestatus = async (req, res) => {
         {
             orderId: order.po_number,
             status: status,
-            shippingDate: new Date().toLocaleDateString(),
+            supplierName: order.supplier_name,
             deliveryDate: order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString() : 'N/A',
             totalAmount: order.total_amount || 0
         }
