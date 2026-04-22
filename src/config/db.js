@@ -7,10 +7,10 @@ const pool = new Pool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 5432,
 
-//   ssl: {
-//     rejectUnauthorized: false,
-//   },
- ssl: false,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+ //ssl: false,
 
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,

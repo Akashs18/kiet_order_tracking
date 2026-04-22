@@ -143,6 +143,7 @@ CREATE INDEX IF NOT EXISTS idx_ticket_comments_user_id ON ticket_comments(user_i
 -- Description: Adds delivered_at timestamp column to track when orders are delivered
 
 ALTER TABLE orders ADD COLUMN delivered_at TIMESTAMP DEFAULT NULL;
+ALTER TABLE orders ADD COLUMN dispatched_at TIMESTAMP DEFAULT NULL;
 
 ```
 ---
