@@ -1,7 +1,10 @@
 const orderModel = require('../models/order.model');
+const orderFileModel = require('../models/orderFile.model');
 const supplierModel = require('../models/supplier.model');
 const ticketModel = require('../models/ticket.model');
 const emailService = require('../services/email.service');
+const fs = require('fs');
+const path = require('path');
 
 exports.getOrders = async (req, res) => {
     let result;
@@ -46,7 +49,46 @@ exports.getOrderById = async (req, res) => {
         return res.status(404).send('Order not found');
     }
 
-    res.render('orders/detail', { order, user: req.session.user });
+    const filesResult = await orderFileModel.getByOrderId(req.params.id);
+    const files = filesResult.rows;
+
+    res.render('orders/detail', { order, user: req.session.user, files });
+};
+
+exports.uploadFile = async (req, res) => {
+    const { id } = req.params;
+
+    if (!req.file) {
+        return res.redirect(`/orders/${id}?error=No+file+selected`);
+    }
+
+    await orderFileModel.addFile(
+        id,
+        req.file.originalname,
+        req.file.filename,
+        req.file.mimetype,
+        req.file.size,
+        req.session.user.email
+    );
+
+    res.redirect(`/orders/${id}`);
+};
+
+exports.deleteFile = async (req, res) => {
+    const { id, fileId } = req.params;
+
+    const result = await orderFileModel.getById(fileId);
+    const file = result.rows[0];
+
+    if (file) {
+        const filePath = path.join(__dirname, '../../public/uploads/orders', file.stored_name);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        await orderFileModel.deleteById(fileId);
+    }
+
+    res.redirect(`/orders/${id}`);
 };
 
 exports.createOrder = async (req, res) => {

@@ -1,267 +1,645 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Order Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Details – <%= order.po_number %></title>
 
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 20px;
+      font-family: 'Inter', sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      padding: 30px 20px;
+      min-height: 100vh;
     }
 
     .container {
-      max-width: 800px;
-      margin: auto;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .page-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a202c;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page-header h1 span.po {
+      color: #2563eb;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+    }
+    .back-btn:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+    }
+
+    /* ── Card ── */
+    .card {
       background: #fff;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     }
 
-    h2 {
-      margin-bottom: 20px;
-      text-align: center;
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .info {
-      margin-bottom: 20px;
+    .card-title .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
     }
 
-    .info p {
-      margin: 5px 0;
+    .icon-blue   { background: #eff6ff; }
+    .icon-green  { background: #f0fdf4; }
+    .icon-purple { background: #faf5ff; }
+    .icon-orange { background: #fff7ed; }
+
+    /* ── Info Grid ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
     }
 
-    .status {
-      font-weight: bold;
-      color: #4CAF50;
+    .info-item label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9ca3af;
+      display: block;
+      margin-bottom: 4px;
     }
 
-    @keyframes fillLine {
-      from { width: 0%; }
-      to { width: 100%; }
+    .info-item .value {
+      font-size: 15px;
+      font-weight: 500;
+      color: #111827;
     }
 
-    @keyframes stepBounce {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.15); }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
     }
+    .badge-PENDING    { background:#fef9c3; color:#854d0e; }
+    .badge-ORDERED    { background:#dbeafe; color:#1e40af; }
+    .badge-RECEIVED   { background:#d1fae5; color:#065f46; }
+    .badge-INVOICED   { background:#ede9fe; color:#5b21b6; }
+    .badge-DISPATCHED { background:#ffedd5; color:#9a3412; }
+    .badge-DELIVERED  { background:#dcfce7; color:#14532d; }
 
-    @keyframes stepPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
-      50% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); }
-    }
-
-    @keyframes slideInStep {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* ── Timeline ── */
+    .timeline-wrap {
+      overflow-x: auto;
+      padding-bottom: 6px;
     }
 
     .timeline {
-      margin-top: 50px;
       display: flex;
       justify-content: space-between;
       position: relative;
-      padding: 0 40px;
-      overflow: hidden;
+      padding: 10px 20px 30px;
+      min-width: 520px;
     }
 
     .timeline::before {
       content: '';
       position: absolute;
-      top: 13px;
-      left: 40px;
-      right: 40px;
+      top: 22px;
+      left: 20px;
+      right: 20px;
       height: 4px;
-      background: linear-gradient(to right, #4CAF50 0%, #4CAF50 0%, #e0e0e0 0%, #e0e0e0 100%);
-      z-index: 1;
-      animation: fillLine 2s ease-out forwards;
-    }
-
-    .timeline h3 {
-      position: absolute;
-      top: -40px;
-      left: 0;
-      margin: 0;
+      background: #e5e7eb;
+      border-radius: 2px;
+      z-index: 0;
     }
 
     .step {
       position: relative;
-      z-index: 2;
+      z-index: 1;
       flex: 1;
       text-align: center;
-      font-size: 14px;
-      color: #999;
-      animation: slideInStep 0.6s ease-out forwards;
-      opacity: 0;
+      font-size: 11px;
+      font-weight: 500;
+      color: #9ca3af;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      animation: fadeUp 0.5s ease both;
     }
 
-    .step:nth-child(2) { animation-delay: 0.1s; }
-    .step:nth-child(3) { animation-delay: 0.2s; }
-    .step:nth-child(4) { animation-delay: 0.3s; }
-    .step:nth-child(5) { animation-delay: 0.4s; }
-    .step:nth-child(6) { animation-delay: 0.5s; }
-    .step:nth-child(7) { animation-delay: 0.6s; }
+    .step:nth-child(1) { animation-delay: 0.05s; }
+    .step:nth-child(2) { animation-delay: 0.10s; }
+    .step:nth-child(3) { animation-delay: 0.15s; }
+    .step:nth-child(4) { animation-delay: 0.20s; }
+    .step:nth-child(5) { animation-delay: 0.25s; }
+    .step:nth-child(6) { animation-delay: 0.30s; }
 
-    .step::before {
-      content: '';
-      display: block;
-      width: 25px;
-      height: 25px;
-      background: #e0e0e0;
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .step-dot {
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      margin: 0 auto 10px auto;
-      border: 4px solid #f4f6f8;
-      transition: all 0.3s ease;
+      background: #e5e7eb;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px #e5e7eb;
     }
 
-    .step.active {
-      color: #333;
-      font-weight: bold;
+    .step.active .step-dot {
+      background: #22c55e;
+      box-shadow: 0 0 0 3px #bbf7d0, 0 4px 10px rgba(34,197,94,0.3);
+      animation: pulse 2s infinite;
     }
 
-    .step.active::before {
-      background: #4CAF50;
-      border-color: #eaf7ea;
-      animation: stepBounce 0.8s ease-out, stepPulse 2s infinite 0.8s;
-      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 3px #bbf7d0; }
+      50%      { box-shadow: 0 0 0 6px rgba(34,197,94,0.15); }
     }
 
-    .step:not(.active)::before:hover {
-      background: #95d5b2;
-      border-color: #d3f9d8;
-      transform: scale(1.1);
+    .step.active { color: #15803d; font-weight: 700; }
+
+    .step-label {
+      font-size: 10px;
+      color: inherit;
     }
 
-    .form-section {
-      margin-top: 30px;
+    .step-time {
+      font-size: 9px;
+      color: #9ca3af;
+      font-weight: 400;
     }
 
-    select, button {
-      padding: 10px;
-      margin-top: 10px;
-      width: 100%;
+    /* ── Status Update (Admin) ── */
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
     }
 
-    button {
-      background: #2196F3;
-      color: white;
-      border: none;
+    select {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      background: #f9fafb;
+      color: #111827;
+      transition: border-color 0.2s;
       cursor: pointer;
     }
-
-    button:hover {
-      background: #1976D2;
+    select:focus {
+      outline: none;
+      border-color: #2563eb;
+      background: #fff;
     }
 
-    .back {
-      margin-top: 30px;
-      text-align: center;
-    }
-
-    .back a {
-      display: inline-block;
-      text-decoration: none;
-      color: white;
-      background: #2196F3;
-      padding: 12px 24px;
-      border-radius: 6px;
-      font-weight: 500;
-      transition: all 0.3s ease;
+    .btn {
+      padding: 10px 22px;
       border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 12px;
+      box-shadow: 0 2px 6px rgba(239,68,68,0.3);
+    }
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      transform: translateY(-1px);
     }
 
-    .back a:hover {
-      background: #1976D2;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+    /* ── Upload Section (Admin) ── */
+    .upload-zone {
+      border: 2px dashed #93c5fd;
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: #eff6ff;
+      position: relative;
     }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: #2563eb;
+      background: #dbeafe;
+    }
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .upload-icon { font-size: 36px; margin-bottom: 10px; }
+    .upload-zone p { font-size: 14px; color: #374151; margin-bottom: 4px; }
+    .upload-zone small { font-size: 12px; color: #6b7280; }
+    .upload-zone .file-name-preview {
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    .upload-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    /* ── Flash Alert ── */
+    .alert {
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 18px;
+      font-weight: 500;
+    }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    /* ── Files List ── */
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      background: #f9fafb;
+      transition: all 0.2s ease;
+    }
+    .file-item:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      transform: translateX(2px);
+    }
+
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .fi-pdf   { background:#fee2e2; }
+    .fi-img   { background:#dbeafe; }
+    .fi-doc   { background:#ede9fe; }
+    .fi-xls   { background:#d1fae5; }
+    .fi-other { background:#f3f4f6; }
+
+    .file-info { flex: 1; min-width: 0; }
+    .file-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-meta {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: #2563eb;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-download:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+    }
+
+    .empty-files {
+      text-align: center;
+      padding: 30px;
+      color: #9ca3af;
+    }
+    .empty-files .empty-icon { font-size: 36px; margin-bottom: 10px; }
+    .empty-files p { font-size: 14px; }
   </style>
-
 </head>
 
 <body>
   <div class="container">
 
+    <!-- Header -->
+    <div class="page-header">
+      <h1>📦 Order <span class="po"><%= order.po_number %></span></h1>
+      <a href="/orders#orders" class="back-btn">← Back to Orders</a>
+    </div>
 
-<h2>Order Details</h2>
+    <% if (typeof query !== 'undefined' && query && query.error) { %>
+      <div class="alert alert-error">⚠️ <%= query.error %></div>
+    <% } %>
 
-<!-- Order Info -->
-<div class="info">
-  <p><strong>PO Number:</strong> <%= order.po_number %></p>
-  <% if (user && user.role === 'ADMIN') { %>
-  <p><strong>Supplier:</strong> <%= order.supplier_name || 'N/A' %></p>
-  <% } %>
-  <p><strong>Expected Delivery:</strong> <%= order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString() : 'N/A' %></p>
-  <p><strong>Status:</strong> <span class="status"><%= order.status %></span></p>
-  <p><strong>Created At:</strong> <%= order.created_at %></p>
-</div>
+    <!-- Order Info -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-blue">📋</span>
+        Order Information
+      </div>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>PO Number</label>
+          <div class="value"><%= order.po_number %></div>
+        </div>
+        <% if (user && user.role === 'ADMIN') { %>
+        <div class="info-item">
+          <label>Supplier</label>
+          <div class="value"><%= order.supplier_name || 'N/A' %></div>
+        </div>
+        <% } %>
+        <div class="info-item">
+          <label>Expected Delivery</label>
+          <div class="value"><%= order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString() : 'N/A' %></div>
+        </div>
+        <div class="info-item">
+          <label>Status</label>
+          <div class="value">
+            <span class="status-badge badge-<%= order.status %>"><%= order.status %></span>
+          </div>
+        </div>
+        <div class="info-item">
+          <label>Created At</label>
+          <div class="value"><%= new Date(order.created_at).toLocaleDateString() %></div>
+        </div>
+      </div>
+    </div>
 
-<!-- Timeline -->
-<div class="timeline">
-  <h3>Status Timeline</h3>
+    <!-- Status Timeline -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-green">🚦</span>
+        Status Timeline
+      </div>
+      <div class="timeline-wrap">
+        <div class="timeline">
+          <div class="step <%= order.created_at ? 'active' : '' %>">
+            <div class="step-dot"></div>
+            <div class="step-label">PENDING</div>
+            <div class="step-time"><%= order.created_at ? new Date(order.created_at).toLocaleDateString() : '' %></div>
+          </div>
+          <div class="step <%= order.ordered_at ? 'active' : '' %>">
+            <div class="step-dot"></div>
+            <div class="step-label">ORDERED</div>
+            <div class="step-time"><%= order.ordered_at ? new Date(order.ordered_at).toLocaleDateString() : '' %></div>
+          </div>
+          <div class="step <%= order.received_at ? 'active' : '' %>">
+            <div class="step-dot"></div>
+            <div class="step-label">RECEIVED</div>
+            <div class="step-time"><%= order.received_at ? new Date(order.received_at).toLocaleDateString() : '' %></div>
+          </div>
+          <div class="step <%= order.invoiced_at ? 'active' : '' %>">
+            <div class="step-dot"></div>
+            <div class="step-label">INVOICED</div>
+            <div class="step-time"><%= order.invoiced_at ? new Date(order.invoiced_at).toLocaleDateString() : '' %></div>
+          </div>
+          <div class="step <%= order.dispatched_at ? 'active' : '' %>">
+            <div class="step-dot"></div>
+            <div class="step-label">DISPATCHED</div>
+            <div class="step-time"><%= order.dispatched_at ? new Date(order.dispatched_at).toLocaleDateString() : '' %></div>
+          </div>
+          <div class="step <%= order.delivered_at ? 'active' : '' %>">
+            <div class="step-dot"></div>
+            <div class="step-label">DELIVERED</div>
+            <div class="step-time"><%= order.delivered_at ? new Date(order.delivered_at).toLocaleDateString() : '' %></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <div class="step <%= order.created_at ? 'active' : '' %>">
-    PENDING <br/>
-    <small><%= order.created_at || '' %></small>
-  </div>
+    <!-- Update Status (Admin Only) -->
+    <% if (user && user.role === 'ADMIN') { %>
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-purple">✏️</span>
+        Update Status
+      </div>
+      <form method="POST" action="/orders/<%= order.id %>/status">
+        <div class="form-row">
+          <select name="status" required>
+            <option value="">Select Status</option>
+            <option value="PENDING"    <%= order.status === 'PENDING'    ? 'selected' : '' %>>PENDING</option>
+            <option value="ORDERED"    <%= order.status === 'ORDERED'    ? 'selected' : '' %>>ORDERED</option>
+            <option value="RECEIVED"   <%= order.status === 'RECEIVED'   ? 'selected' : '' %>>RECEIVED</option>
+            <option value="INVOICED"   <%= order.status === 'INVOICED'   ? 'selected' : '' %>>INVOICED</option>
+            <option value="DISPATCHED" <%= order.status === 'DISPATCHED' ? 'selected' : '' %>>DISPATCHED</option>
+            <option value="DELIVERED"  <%= order.status === 'DELIVERED'  ? 'selected' : '' %>>DELIVERED</option>
+          </select>
+          <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+    <% } %>
 
-  <div class="step <%= order.ordered_at ? 'active' : '' %>">
-    ORDERED <br/>
-    <small><%= order.ordered_at || '' %></small>
-  </div>
+    <!-- ─── File Upload (Admin Only) ──────────────────────── -->
+    <% if (user && user.role === 'ADMIN') { %>
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-orange">📎</span>
+        Upload Document
+      </div>
+      <form method="POST" action="/orders/<%= order.id %>/files" enctype="multipart/form-data" id="uploadForm">
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" name="orderFile" id="orderFile" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt" required>
+          <div class="upload-icon">☁️</div>
+          <p><strong>Click to browse</strong> or drag & drop a file here</p>
+          <small>Supported: Images, PDF, Word, Excel, TXT — Max 10 MB</small>
+          <div class="file-name-preview" id="fileNamePreview"></div>
+        </div>
+        <div class="upload-actions">
+          <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>⬆ Upload File</button>
+        </div>
+      </form>
+    </div>
+    <% } %>
 
-  <div class="step <%= order.received_at ? 'active' : '' %>">
-    RECEIVED <br/>
-    <small><%= order.received_at || '' %></small>
-  </div>
+    <!-- ─── Attachments (Both Admin & Client) ─────────────── -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-blue">🗂️</span>
+        Attachments (<%= files.length %>)
+      </div>
 
-  <div class="step <%= order.invoiced_at ? 'active' : '' %>">
-    INVOICED <br/>
-    <small><%= order.invoiced_at || '' %></small>
-  </div>
+      <% if (files.length === 0) { %>
+        <div class="empty-files">
+          <div class="empty-icon">📂</div>
+          <p>No documents uploaded for this order yet.</p>
+        </div>
+      <% } else { %>
+        <div class="file-list">
+          <% files.forEach(function(file) { %>
+            <%
+              let fileIconClass = 'fi-other';
+              let fileEmoji = '📄';
+              if (file.mime_type && file.mime_type.startsWith('image/')) {
+                fileIconClass = 'fi-img'; fileEmoji = '🖼️';
+              } else if (file.mime_type === 'application/pdf') {
+                fileIconClass = 'fi-pdf'; fileEmoji = '📕';
+              } else if (file.mime_type && (file.mime_type.includes('word') || file.mime_type.includes('document'))) {
+                fileIconClass = 'fi-doc'; fileEmoji = '📝';
+              } else if (file.mime_type && (file.mime_type.includes('excel') || file.mime_type.includes('spreadsheet'))) {
+                fileIconClass = 'fi-xls'; fileEmoji = '📊';
+              }
+              const sizeKB = file.size_bytes ? (file.size_bytes / 1024).toFixed(1) + ' KB' : 'Unknown size';
+              const uploadDate = file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '';
+            %>
+            <div class="file-item">
+              <div class="file-icon <%= fileIconClass %>"><%= fileEmoji %></div>
+              <div class="file-info">
+                <div class="file-name" title="<%= file.original_name %>"><%= file.original_name %></div>
+                <div class="file-meta"><%= sizeKB %> &nbsp;·&nbsp; Uploaded <%= uploadDate %> &nbsp;·&nbsp; by <%= file.uploaded_by %></div>
+              </div>
+              <div class="file-actions">
+                <a href="/uploads/orders/<%= file.stored_name %>" download="<%= file.original_name %>" class="btn-download">⬇ Download</a>
+                <% if (user && user.role === 'ADMIN') { %>
+                  <form method="POST" action="/orders/<%= order.id %>/files/<%= file.id %>/delete" onsubmit="return confirm('Delete this file?')">
+                    <button type="submit" class="btn btn-danger">🗑</button>
+                  </form>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
 
-  <div class="step <%= order.dispatched_at ? 'active' : '' %>">
-    DISPATCHED <br/>
-    <small><%= order.dispatched_at || '' %></small>
-  </div>
+  </div><!-- /container -->
 
-  <div class="step <%= order.delivered_at ? 'active' : '' %>">
-    DELIVERED <br/>
-    <small><%= order.delivered_at || '' %></small>
-  </div>
+  <script>
+    // Drag & Drop + file name preview
+    const zone     = document.getElementById('uploadZone');
+    const input    = document.getElementById('orderFile');
+    const preview  = document.getElementById('fileNamePreview');
+    const uploadBtn = document.getElementById('uploadBtn');
 
-</div>
+    if (zone && input) {
+      input.addEventListener('change', () => {
+        if (input.files.length > 0) {
+          preview.textContent = '📎 ' + input.files[0].name;
+          uploadBtn.disabled = false;
+        } else {
+          preview.textContent = '';
+          uploadBtn.disabled = true;
+        }
+      });
 
-<!-- Update Status (Admin Only) -->
-<% if (user && user.role === 'ADMIN') { %>
-  <div class="form-section">
-    <h3>Update Status</h3>
-
-    <form method="POST" action="/orders/<%= order.id %>/status">
-      <select name="status" required>
-        <option value="">Select Status</option>
-        <option value="PENDING">PENDING</option>
-        <option value="ORDERED">ORDERED</option>
-        <option value="RECEIVED">RECEIVED</option>
-        <option value="INVOICED">INVOICED</option>
-        <option value="DISPATCHED">DISPATCHED</option>
-        <option value="DELIVERED">DELIVERED</option>
-      </select>
-
-      <button type="submit">Update</button>
-    </form>
-  </div>
-<% } %>
-
-<!-- Back -->
-<div class="back">
-  <a href="/orders#orders">← Back to Orders</a>
-</div>
-
-
-  </div>
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+          input.files = e.dataTransfer.files;
+          preview.textContent = '📎 ' + e.dataTransfer.files[0].name;
+          uploadBtn.disabled = false;
+        }
+      });
+    }
+  </script>
 </body>
 </html>

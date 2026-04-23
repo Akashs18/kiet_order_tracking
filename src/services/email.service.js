@@ -40,6 +40,11 @@ const generateEmailTemplate = (additionalData = {}) => {
             ${supportPhone ? `or ${supportPhone}` : ''}.
         </p>
 
+        <p>
+        To track your order, click on the link below:
+        <a href="https://kiet-order-tracking.onrender.com/auth/login">Track Order</a>
+        </p>
+
         <p>We appreciate your business and hope you enjoy your purchase!</p>
 
         <p>

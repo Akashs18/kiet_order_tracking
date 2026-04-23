@@ -18,6 +18,7 @@ app.use(sessionConfig);
 
 //static
 app.use(express.static(path.join(__dirname,'public')));
+app.use('/uploads', express.static(path.join(__dirname,'public/uploads')));
 
 //view engine
 app.set('view engine','ejs');
