@@ -62,6 +62,12 @@ res.redirect('/orders');
 
 exports.logout =(req,res)=>{
     req.session.destroy();
+    
+    // Prevent caching after logout
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     res.redirect('/auth/login');
 
 };

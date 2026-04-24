@@ -16,6 +16,15 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(sessionConfig);
 
+// Prevent caching of authentication and protected pages
+app.use((req, res, next) => {
+    // Set cache-control headers for all responses
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+});
+
 //static
 app.use(express.static(path.join(__dirname,'public')));
 app.use('/uploads', express.static(path.join(__dirname,'../public/uploads')));

@@ -10,6 +10,7 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
+ //ssl: false,
 
   max: 10,                        // max pool connections
   idleTimeoutMillis: 60000,       // close idle clients after 60s

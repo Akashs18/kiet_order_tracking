@@ -132,48 +132,77 @@ exports.deleteFile = async (req, res) => {
 };
 
 exports.createOrder = async (req, res) => {
-    const { po_number, supplier_name, client_email, client_name, expected_delivery_date, order_type, product_name, description } = req.body;
+    try {
+        const { po_number, supplier_name, client_email, client_name, expected_delivery_date, order_type, product_name, description } = req.body;
 
-    const result = await orderModel.create(po_number, supplier_name, client_email, client_name, expected_delivery_date, order_type, product_name, description);
-    const newOrder = result.rows[0];
+        const result = await orderModel.create(po_number, supplier_name, client_email, client_name, expected_delivery_date, order_type, product_name, description);
+        const newOrder = result.rows[0];
 
-    // Initial tracking step for 'PENDING' or first step
-    const steps = statusConfig.getSteps(order_type || 'TRADING');
-    await orderModel.updateStatus(newOrder.id, steps[0], null, order_type || 'TRADING');
+        // Initial tracking step for 'PENDING' or first step
+        const steps = statusConfig.getSteps(order_type || 'TRADING');
+        await orderModel.updateStatus(newOrder.id, steps[0], null, order_type || 'TRADING');
 
-    res.redirect('/orders');
+        // Send welcome/order created email (from main branch logic)
+        try {
+            await emailService.sendOrderNotification(
+                newOrder.client_email,
+                {
+                    name: newOrder.client_name || 'Valued Customer'
+                },
+                {
+                    orderId: newOrder.po_number,
+                    status: steps[0],
+                    supplierName: supplier_name,
+                    deliveryDate: expected_delivery_date ? new Date(expected_delivery_date).toLocaleDateString() : 'N/A',
+                }
+            );
+        } catch (emailErr) {
+            console.error('Initial email notification failed:', emailErr.message);
+        }
+
+        res.redirect('/orders');
+    } catch (err) {
+        console.error('createOrder error:', err.message);
+        res.redirect('/orders?error=Failed+to+create+order');
+    }
 };
 
 exports.updatestatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const orderResult = await orderModel.getById(id);
-    const order = orderResult.rows[0];
-
-    if (!order) return res.status(404).send('Order not found');
-
-    const result = await orderModel.updateStatus(id, status, order.status, order.order_type);
-    const updatedOrder = result.rows[0];
-
-    // Send formatted HTML email with order details
     try {
-        await emailService.sendOrderNotification(
-            updatedOrder.client_email,
-            {
-                name: updatedOrder.client_name || 'Valued Customer'
-            },
-            {
-                orderId: updatedOrder.po_number,
-                status: status,
-                shippingDate: new Date().toLocaleDateString(),
-                deliveryDate: updatedOrder.expected_delivery_date ? new Date(updatedOrder.expected_delivery_date).toLocaleDateString() : 'N/A',
-                totalAmount: updatedOrder.total_amount || 0
-            }
-        );
-    } catch (emailErr) {
-        console.error('Email notification failed:', emailErr.message);
-    }
+        const orderResult = await orderModel.getById(id);
+        const order = orderResult.rows[0];
 
-    res.redirect(`/orders/${id}`);
-};
+        if (!order) return res.status(404).send('Order not found');
+
+        const result = await orderModel.updateStatus(id, status, order.status, order.order_type);
+        const updatedOrder = result.rows[0];
+
+        // Send formatted HTML email with order details
+        try {
+            await emailService.sendOrderNotification(
+                updatedOrder.client_email,
+                {
+                    name: updatedOrder.client_name || 'Valued Customer'
+                },
+                {
+                    orderId: updatedOrder.po_number,
+                    status: status,
+                    supplierName: updatedOrder.supplier_name,
+                    shippingDate: new Date().toLocaleDateString(),
+                    deliveryDate: updatedOrder.expected_delivery_date ? new Date(updatedOrder.expected_delivery_date).toLocaleDateString() : 'N/A',
+                    totalAmount: updatedOrder.total_amount || 0
+                }
+            );
+        } catch (emailErr) {
+            console.error('Email notification failed:', emailErr.message);
+        }
+
+        res.redirect(`/orders/${id}`);
+    } catch (err) {
+        console.error('updatestatus error:', err.message);
+        res.redirect(`/orders/${id}?error=Status+update+failed`);
+    }
+};
