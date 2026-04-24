@@ -12,9 +12,11 @@ const pool = new Pool({
   },
  //ssl: false,
 
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  max: 10,                        // max pool connections
+  idleTimeoutMillis: 60000,       // close idle clients after 60s
+  connectionTimeoutMillis: 10000, // wait up to 10s to acquire a connection
   keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 });
 
 module.exports = pool;

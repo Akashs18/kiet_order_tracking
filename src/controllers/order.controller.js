@@ -3,6 +3,7 @@ const orderFileModel = require('../models/orderFile.model');
 const supplierModel = require('../models/supplier.model');
 const ticketModel = require('../models/ticket.model');
 const emailService = require('../services/email.service');
+const statusConfig = require('../utils/statusConfig');
 const fs = require('fs');
 const path = require('path');
 
@@ -38,7 +39,22 @@ exports.getOrders = async (req, res) => {
     }
     tickets = ticketsResult.rows;
 
-    res.render('orders/index', { orders: result.rows, user: req.session.user, searchQuery, suppliers, tickets });
+    // Calculate order type stats for dashboard
+    const orders = result.rows;
+    const orderStats = {
+        trading: orders.filter(o => (o.order_type || 'TRADING') === 'TRADING').length,
+        machinery: orders.filter(o => o.order_type === 'MACHINERY').length
+    };
+
+    res.render('orders/index', { 
+        orders, 
+        user: req.session.user, 
+        searchQuery, 
+        suppliers, 
+        tickets, 
+        ORDER_TYPES: statusConfig.ORDER_TYPES,
+        orderStats
+    });
 };
 
 exports.getOrderById = async (req, res) => {
@@ -52,7 +68,23 @@ exports.getOrderById = async (req, res) => {
     const filesResult = await orderFileModel.getByOrderId(req.params.id);
     const files = filesResult.rows;
 
-    res.render('orders/detail', { order, user: req.session.user, files });
+    // Fetch dynamic tracking steps
+    const trackingStepsResult = await orderModel.getTrackingSteps(req.params.id);
+    const trackingSteps = {};
+    trackingStepsResult.rows.forEach(row => {
+        trackingSteps[row.step_name] = row.completed_at;
+    });
+
+    const allSteps = statusConfig.getSteps(order.order_type || 'TRADING');
+
+    res.render('orders/detail', { 
+        order, 
+        user: req.session.user, 
+        files, 
+        trackingSteps, 
+        allSteps,
+        query: req.query 
+    });
 };
 
 exports.uploadFile = async (req, res) => {
@@ -62,86 +94,115 @@ exports.uploadFile = async (req, res) => {
         return res.redirect(`/orders/${id}?error=No+file+selected`);
     }
 
-    await orderFileModel.addFile(
-        id,
-        req.file.originalname,
-        req.file.filename,
-        req.file.mimetype,
-        req.file.size,
-        req.session.user.email
-    );
-
-    res.redirect(`/orders/${id}`);
+    try {
+        await orderFileModel.addFile(
+            id,
+            req.file.originalname,
+            req.file.filename,
+            req.file.mimetype,
+            req.file.size,
+            req.session.user.email
+        );
+        res.redirect(`/orders/${id}`);
+    } catch (err) {
+        console.error('uploadFile error:', err.message);
+        res.redirect(`/orders/${id}?error=Upload+failed.+Please+try+again`);
+    }
 };
 
 exports.deleteFile = async (req, res) => {
     const { id, fileId } = req.params;
 
-    const result = await orderFileModel.getById(fileId);
-    const file = result.rows[0];
+    try {
+        const result = await orderFileModel.getById(fileId);
+        const file = result.rows[0];
 
-    if (file) {
-        const filePath = path.join(__dirname, '../../public/uploads/orders', file.stored_name);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+        if (file) {
+            const filePath = path.join(__dirname, '../../public/uploads/orders', file.stored_name);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+            await orderFileModel.deleteById(fileId);
         }
-        await orderFileModel.deleteById(fileId);
+        res.redirect(`/orders/${id}`);
+    } catch (err) {
+        console.error('deleteFile error:', err.message);
+        res.redirect(`/orders/${id}?error=Delete+failed.+Please+try+again`);
     }
-
-    res.redirect(`/orders/${id}`);
 };
 
 exports.createOrder = async (req, res) => {
-    const { po_number, supplier_name, client_email, expected_delivery_date } = req.body;
+    try {
+        const { po_number, supplier_name, client_email, client_name, expected_delivery_date, order_type, product_name, description } = req.body;
 
-    const result = await orderModel.create(po_number, supplier_name, client_email, expected_delivery_date);
-    const order = result.rows[0];
+        const result = await orderModel.create(po_number, supplier_name, client_email, client_name, expected_delivery_date, order_type, product_name, description);
+        const newOrder = result.rows[0];
 
-    // Send welcome/order created email
-    await emailService.sendOrderNotification(
-        order.client_email,
-        {
-            name: order.client_name || 'Valued Customer'
-        },
-        {
-            orderId: order.po_number,
-            status: 'PENDING',
-            supplierName: supplier_name,
-            deliveryDate: expected_delivery_date ? new Date(expected_delivery_date).toLocaleDateString() : 'N/A',
+        // Initial tracking step for 'PENDING' or first step
+        const steps = statusConfig.getSteps(order_type || 'TRADING');
+        await orderModel.updateStatus(newOrder.id, steps[0], null, order_type || 'TRADING');
+
+        // Send welcome/order created email (from main branch logic)
+        try {
+            await emailService.sendOrderNotification(
+                newOrder.client_email,
+                {
+                    name: newOrder.client_name || 'Valued Customer'
+                },
+                {
+                    orderId: newOrder.po_number,
+                    status: steps[0],
+                    supplierName: supplier_name,
+                    deliveryDate: expected_delivery_date ? new Date(expected_delivery_date).toLocaleDateString() : 'N/A',
+                }
+            );
+        } catch (emailErr) {
+            console.error('Initial email notification failed:', emailErr.message);
         }
-    );
 
-    res.redirect('/orders');
+        res.redirect('/orders');
+    } catch (err) {
+        console.error('createOrder error:', err.message);
+        res.redirect('/orders?error=Failed+to+create+order');
+    }
 };
 
 exports.updatestatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    let field = '';
-    if (status === 'ORDERED') field = 'ordered_at';
-    if (status === 'RECEIVED') field = 'received_at';
-    if (status === 'INVOICED') field = 'invoiced_at';
-    if (status === 'DISPATCHED') field = 'dispatched_at';
-    if (status === 'DELIVERED') field = 'delivered_at';
+    try {
+        const orderResult = await orderModel.getById(id);
+        const order = orderResult.rows[0];
 
-    const result = await orderModel.updateStatus(id, status, field);
-    const order = result.rows[0];
+        if (!order) return res.status(404).send('Order not found');
 
-    // Send formatted HTML email with order details
-    await emailService.sendOrderNotification(
-        order.client_email,
-        {
-            name: order.client_name || 'Valued Customer'
-        },
-        {
-            orderId: order.po_number,
-            status: status,
-            supplierName: order.supplier_name,
-            deliveryDate: order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString() : 'N/A',
-            totalAmount: order.total_amount || 0
+        const result = await orderModel.updateStatus(id, status, order.status, order.order_type);
+        const updatedOrder = result.rows[0];
+
+        // Send formatted HTML email with order details
+        try {
+            await emailService.sendOrderNotification(
+                updatedOrder.client_email,
+                {
+                    name: updatedOrder.client_name || 'Valued Customer'
+                },
+                {
+                    orderId: updatedOrder.po_number,
+                    status: status,
+                    supplierName: updatedOrder.supplier_name,
+                    shippingDate: new Date().toLocaleDateString(),
+                    deliveryDate: updatedOrder.expected_delivery_date ? new Date(updatedOrder.expected_delivery_date).toLocaleDateString() : 'N/A',
+                    totalAmount: updatedOrder.total_amount || 0
+                }
+            );
+        } catch (emailErr) {
+            console.error('Email notification failed:', emailErr.message);
         }
-    );
 
-    res.redirect(`/orders/${id}`);
+        res.redirect(`/orders/${id}`);
+    } catch (err) {
+        console.error('updatestatus error:', err.message);
+        res.redirect(`/orders/${id}?error=Status+update+failed`);
+    }
 };

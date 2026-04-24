@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Admin Dashboard - Order Tracking</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --primary: #4f46e5;
@@ -187,6 +188,11 @@
       box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
     }
 
+    input.auto-filled {
+      background-color: #f0fdf4;
+      border-color: #86efac;
+    }
+
     .btn {
       padding: 10px 20px;
       border-radius: 8px;
@@ -234,17 +240,24 @@
     .status-badge {
       padding: 6px 12px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       display: inline-block;
+      text-transform: uppercase;
+      background: #f1f5f9; /* Default gray background */
+      color: #64748b;      /* Default gray text */
     }
 
-    .status-PENDING { background: #e2e8f0; color: var(--status-pending); }
-    .status-ORDERED { background: #dbeafe; color: var(--status-ordered); }
-    .status-RECEIVED { background: #fef3c7; color: var(--status-received); }
-    .status-INVOICED { background: #ede9fe; color: var(--status-invoiced); }
-    .status-DISPATCHED { background: #d1fae5; color: var(--status-dispatched); }
-    .status-DELIVERED { background: #cffafe; color: var(--status-delivered); }
+    .status-PENDING { background: #e2e8f0; color: #475569; }
+    .status-ORDERED { background: #dbeafe; color: #1e40af; }
+    .status-RECEIVED { background: #fef3c7; color: #92400e; }
+    .status-INVOICED { background: #ede9fe; color: #6d28d9; }
+    .status-DISPATCHED { background: #dcfce7; color: #15803d; }
+    .status-DELIVERED { background: #dcfce7; color: #15803d; }
+
+    /* Machinery steps usually don't have individual classes, so they use the default gray above. 
+       Let's make them slightly more distinct if they are active. */
+    tr:hover .status-badge { opacity: 0.9; }
 
     /* Dashboard Stats */
     .stats-grid {
@@ -266,6 +279,25 @@
     .stat-title { color: var(--text-light); font-size: 13px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;}
     .stat-value { font-size: 28px; font-weight: 700; color: #0f172a; }
 
+    /* Sub-tabs */
+    .sub-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 16px 24px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+    }
+    .sub-tab {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .sub-tab:hover { background: #e2e8f0; color: #1e293b; }
+    .sub-tab.active { background: #eef2ff; color: #4f46e5; }
   </style>
 </head>
 
@@ -352,9 +384,72 @@
           </div>
         </div>
 
-        <div class="card">
-          <h3>Recent Activity</h3>
-          <p style="color: #64748b; font-size: 14px;">Use the sidebar to navigate to full views or create new orders.</p>
+        <div class="card" style="margin-top: 24px;">
+          <h3 style="margin-bottom: 24px;">Order Type Distribution</h3>
+          <div style="max-height: 250px; display: flex; justify-content: center; margin-bottom: 20px;">
+            <canvas id="orderTypeChart"></canvas>
+          </div>
+          <div style="display: flex; justify-content: center; gap: 30px; padding-top: 15px; border-top: 1px solid #f1f5f9;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 10px; height: 10px; background: #4f46e5; border-radius: 50%;"></span>
+              <span style="font-size: 14px; font-weight: 600; color: #1e293b;">Trading (<%= orderStats.trading %>)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 10px; height: 10px; background: rgb(128 92 31); border-radius: 50%;"></span>
+              <span style="font-size: 14px; font-weight: 600; color: #1e293b;">Machinery (<%= orderStats.machinery %>)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 24px; padding: 0;">
+          <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">Recent Orders</h3>
+            <button onclick="switchTab('orders', document.querySelector('[onclick*=\'orders\']'))" class="btn btn-primary btn-sm" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;">View All</button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>PO Number</th>
+                  <th>Order</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% orders.slice(0, 5).forEach(order => { %>
+                  <tr>
+                    <td><strong style="color: #0f172a;">#<%= order.id %></strong></td>
+                    <td><%= order.po_number %></td>
+                    <td style="max-width: 200px;">
+                      <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <strong style="font-size: 13px; color: #1e293b;"><%= order.product_name || 'N/A' %></strong>
+                        <% if (user.role === 'ADMIN') { %>
+                        <small style="color: #64748b; font-size: 11px;">Client: <%= order.client_name || 'N/A' %></small>
+                        <% } %>
+                      </div>
+                    </td>
+                    <td>
+                      <% 
+                        let typeColor = order.order_type === 'MACHINERY' ? 'rgb(128 92 31)' : '#4f46e5';
+                        let typeBg = order.order_type === 'MACHINERY' ? 'rgb(128 92 31 / 15%)' : '#eef2ff';
+                      %>
+                      <span style="font-size: 11px; font-weight: 600; color: <%= typeColor %>; background: <%= typeBg %>; padding: 2px 8px; border-radius: 4px; text-transform: capitalize; border: 1px solid <%= order.order_type === 'MACHINERY' ? 'rgb(128 92 31 / 30%)' : 'transparent' %>;">
+                        <%= (order.order_type || 'TRADING').toLowerCase() %>
+                      </span>
+                    </td>
+                    <td><span class="status-badge status-<%= order.status %>"><%= order.status %></span></td>
+                    <td><a href="/orders/<%= order.id %>" class="btn btn-primary btn-sm">View</a></td>
+                  </tr>
+                <% }) %>
+                <% if (orders.length === 0) { %>
+                  <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">No orders found</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -371,12 +466,19 @@
               <% } %>
             </form>
           </div>
+          <div class="sub-tabs">
+            <div class="sub-tab active" onclick="filterOrders('ALL', this)">All Orders</div>
+            <div class="sub-tab" onclick="filterOrders('TRADING', this)">Trading</div>
+            <div class="sub-tab" onclick="filterOrders('MACHINERY', this)">Machinery</div>
+          </div>
           <div style="overflow-x: auto;">
             <table>
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>PO Number</th>
+                  <th>Order</th>
+                  <th>Type</th>
                   <th>Status</th>
                   <th>Created Date</th>
                   <th>Action</th>
@@ -384,12 +486,31 @@
               </thead>
               <tbody>
                 <% if (orders.length === 0) { %>
-                  <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">No orders found</td></tr>
+                  <tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">No orders found</td></tr>
                 <% } %>
                 <% orders.forEach(order => { %>
-                  <tr>
+                  <tr class="order-row" data-type="<%= order.order_type || 'TRADING' %>">
                     <td><strong style="color: #0f172a;">#<%= order.id %></strong></td>
                     <td><%= order.po_number %></td>
+                    <td style="max-width: 250px;">
+                      <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <strong style="font-size: 14px; color: #1e293b;"><%= order.product_name || 'N/A' %></strong>
+                        <% if (user.role === 'ADMIN') { %>
+                        <small style="color: #64748b; font-weight: 500;">
+                          Client: <%= order.client_name || 'N/A' %>
+                        </small>
+                        <% } %>
+                      </div>
+                    </td>
+                    <td>
+                      <% 
+                        let typeColor = order.order_type === 'MACHINERY' ? 'rgb(128 92 31)' : '#4f46e5';
+                        let typeBg = order.order_type === 'MACHINERY' ? 'rgb(128 92 31 / 15%)' : '#eef2ff';
+                      %>
+                      <span style="font-size: 13px; font-weight: 600; color: <%= typeColor %>; background: <%= typeBg %>; padding: 3px 10px; border-radius: 6px; text-transform: capitalize; border: 1px solid <%= order.order_type === 'MACHINERY' ? 'rgb(128 92 31 / 30%)' : 'transparent' %>;">
+                        <%= (order.order_type || 'TRADING').toLowerCase() %>
+                      </span>
+                    </td>
                     <td><span class="status-badge status-<%= order.status %>"><%= order.status %></span></td>
                     <td><span style="color: #64748b; font-size: 13px;"><%= order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A' %></span></td>
                     <td><a href="/orders/<%= order.id %>" class="btn btn-primary btn-sm">View Details</a></td>
@@ -414,7 +535,11 @@
               </div>
               <div class="form-group">
                 <label>Client Email</label>
-                <input type="email" name="client_email" placeholder="example@email.com" required />
+                <input type="email" name="client_email" id="clientEmailInput" placeholder="example@email.com" required />
+              </div>
+              <div class="form-group">
+                <label>Client Name</label>
+                <input type="text" name="client_name" id="clientNameInput" placeholder="Fetching name..." required />
               </div>
               <div class="form-group">
                 <label>Supplier Name</label>
@@ -423,6 +548,22 @@
               <div class="form-group">
                 <label>Expected Delivery Date</label>
                 <input type="date" name="expected_delivery_date" required />
+              </div>
+              <div class="form-group">
+                <label>Order Type</label>
+                <select name="order_type" required>
+                  <% Object.keys(ORDER_TYPES).forEach(type => { %>
+                    <option value="<%= type %>"><%= ORDER_TYPES[type].label %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" name="product_name" placeholder="Enter product name" />
+              </div>
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Description</label>
+                <textarea name="description" placeholder="Enter product description..." style="padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px;"></textarea>
               </div>
             </div>
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
@@ -722,6 +863,41 @@
       document.getElementById('page-title').innerText = titles[tabId];
     }
 
+    function filterOrders(type, element) {
+      // Update sub-tab styles
+      document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+
+      const rows = document.querySelectorAll('.order-row');
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        if (type === 'ALL' || row.dataset.type === type) {
+          row.style.display = 'table-row';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      // Show/hide empty message if no results in this filter
+      const emptyMsg = document.getElementById('empty-filter-msg');
+      if (visibleCount === 0) {
+        if (!emptyMsg) {
+          const tbody = document.querySelector('tbody');
+          const tr = document.createElement('tr');
+          tr.id = 'empty-filter-msg';
+          tr.innerHTML = `<td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">No ${type === 'ALL' ? '' : type.toLowerCase()} orders found</td>`;
+          tbody.appendChild(tr);
+        } else {
+          emptyMsg.style.display = 'table-row';
+          emptyMsg.querySelector('td').innerText = `No ${type === 'ALL' ? '' : type.toLowerCase()} orders found`;
+        }
+      } else if (emptyMsg) {
+        emptyMsg.style.display = 'none';
+      }
+    }
+
     function editSupplier(supplier) {
       alert('Edit feature for supplier: ' + supplier.name + ' (ID: ' + supplier.id + '). This would open an edit modal in a full implementation.');
     }
@@ -732,6 +908,67 @@
       if (['dashboard', 'orders', 'create', 'suppliers', 'register', 'tickets'].includes(hash)) {
         const targetNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick').includes(hash));
         if(targetNav) switchTab(hash, targetNav);
+      }
+
+      // Auto-fill client name by email
+      const emailInput = document.getElementById('clientEmailInput');
+      const nameInput = document.getElementById('clientNameInput');
+
+      if (emailInput && nameInput) {
+        emailInput.addEventListener('blur', async () => {
+          const email = emailInput.value.trim();
+          if (email && email.includes('@')) {
+            try {
+              nameInput.placeholder = 'Searching...';
+              const response = await fetch(`/auth/user-by-email/${encodeURIComponent(email)}`);
+              const data = await response.json();
+              if (data.success) {
+                nameInput.value = data.name;
+                nameInput.classList.add('auto-filled');
+              } else {
+                nameInput.placeholder = 'Enter client name';
+              }
+            } catch (err) {
+              console.error('Error fetching client name:', err);
+            }
+          }
+        });
+      }
+
+      // Initialize Doughnut Chart
+      const chartCtx = document.getElementById('orderTypeChart');
+      if (chartCtx) {
+        new Chart(chartCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Trading', 'Machinery'],
+            datasets: [{
+              label: 'Orders',
+              data: [<%= orderStats.trading %>, <%= orderStats.machinery %>],
+              backgroundColor: ['#4f46e5', 'rgb(128 92 31)'],
+              hoverOffset: 8,
+              borderWidth: 0,
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: '#1e293b',
+                padding: 12,
+                titleFont: { size: 14 },
+                bodyFont: { size: 13 },
+                displayColors: false
+              }
+            }
+          }
+        });
       }
     });
   </script>

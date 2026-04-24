@@ -71,3 +71,17 @@ exports.logout =(req,res)=>{
     res.redirect('/auth/login');
 
 };
+
+exports.searchUserByEmail = async (req, res) => {
+    try {
+        const { email } = req.params;
+        const result = await userModel.findByEmail(email);
+        if (result.rows.length > 0) {
+            return res.json({ success: true, name: result.rows[0].name });
+        }
+        return res.json({ success: false, message: 'User not found' });
+    } catch (err) {
+        console.error('searchUserByEmail error:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};

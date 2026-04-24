@@ -457,10 +457,36 @@
           <label>Expected Delivery</label>
           <div class="value"><%= order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString() : 'N/A' %></div>
         </div>
+        <% if (user && user.role === 'ADMIN') { %>
+        <div class="info-item">
+          <label>Client Name</label>
+          <div class="value"><strong style="color: #0f172a;"><%= order.client_name || 'N/A' %></strong></div>
+        </div>
+        <div class="info-item">
+          <label>Client Email</label>
+          <div class="value" style="font-size: 13px; color: #4b5563;"><%= order.client_email %></div>
+        </div>
+        <% } %>
+        <div class="info-item">
+          <label>Order Type</label>
+          <div class="value">
+            <% 
+              let typeColor = order.order_type === 'MACHINERY' ? 'rgb(128 92 31)' : '#4f46e5';
+              let typeBg = order.order_type === 'MACHINERY' ? 'rgb(128 92 31 / 15%)' : '#eef2ff';
+            %>
+            <span style="font-size: 13px; font-weight: 700; color: <%= typeColor %>; background: <%= typeBg %>; padding: 4px 12px; border-radius: 6px; text-transform: capitalize; border: 1px solid <%= order.order_type === 'MACHINERY' ? 'rgb(128 92 31 / 30%)' : 'transparent' %>;">
+              <%= (order.order_type || 'TRADING').toLowerCase() %>
+            </span>
+          </div>
+        </div>
+        <div class="info-item">
+          <label>Product Name</label>
+          <div class="value"><%= order.product_name || 'N/A' %></div>
+        </div>
         <div class="info-item">
           <label>Status</label>
           <div class="value">
-            <span class="status-badge badge-<%= order.status %>"><%= order.status %></span>
+            <span class="status-badge" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;"><%= order.status %></span>
           </div>
         </div>
         <div class="info-item">
@@ -468,6 +494,13 @@
           <div class="value"><%= new Date(order.created_at).toLocaleDateString() %></div>
         </div>
       </div>
+
+      <% if (order.description) { %>
+      <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; display: block; margin-bottom: 8px;">Description</label>
+        <div style="font-size: 14px; color: #374151; line-height: 1.6; white-space: pre-wrap;"><%= order.description %></div>
+      </div>
+      <% } %>
     </div>
 
     <!-- Status Timeline -->
@@ -477,37 +510,17 @@
         Status Timeline
       </div>
       <div class="timeline-wrap">
-        <div class="timeline">
-          <div class="step <%= order.created_at ? 'active' : '' %>">
-            <div class="step-dot"></div>
-            <div class="step-label">PENDING</div>
-            <div class="step-time"><%= order.created_at ? new Date(order.created_at).toLocaleDateString() : '' %></div>
+        <div class="timeline" style="min-width: <%= allSteps.length * 100 %>px;">
+          <% allSteps.forEach((step, index) => { 
+                const isCompleted = !!trackingSteps[step];
+                const isCurrent = order.status === step;
+          %>
+          <div class="step <%= isCompleted || isCurrent ? 'active' : '' %>">
+            <div class="step-dot" style="<%= isCurrent ? 'background: #2563eb; box-shadow: 0 0 0 3px #bfdbfe;' : '' %>"></div>
+            <div class="step-label" style="<%= isCurrent ? 'color: #2563eb; font-weight: 700;' : '' %>"><%= step.toUpperCase() %></div>
+            <div class="step-time"><%= isCompleted ? new Date(trackingSteps[step]).toLocaleDateString() : '' %></div>
           </div>
-          <div class="step <%= order.ordered_at ? 'active' : '' %>">
-            <div class="step-dot"></div>
-            <div class="step-label">ORDERED</div>
-            <div class="step-time"><%= order.ordered_at ? new Date(order.ordered_at).toLocaleDateString() : '' %></div>
-          </div>
-          <div class="step <%= order.received_at ? 'active' : '' %>">
-            <div class="step-dot"></div>
-            <div class="step-label">RECEIVED</div>
-            <div class="step-time"><%= order.received_at ? new Date(order.received_at).toLocaleDateString() : '' %></div>
-          </div>
-          <div class="step <%= order.invoiced_at ? 'active' : '' %>">
-            <div class="step-dot"></div>
-            <div class="step-label">INVOICED</div>
-            <div class="step-time"><%= order.invoiced_at ? new Date(order.invoiced_at).toLocaleDateString() : '' %></div>
-          </div>
-          <div class="step <%= order.dispatched_at ? 'active' : '' %>">
-            <div class="step-dot"></div>
-            <div class="step-label">DISPATCHED</div>
-            <div class="step-time"><%= order.dispatched_at ? new Date(order.dispatched_at).toLocaleDateString() : '' %></div>
-          </div>
-          <div class="step <%= order.delivered_at ? 'active' : '' %>">
-            <div class="step-dot"></div>
-            <div class="step-label">DELIVERED</div>
-            <div class="step-time"><%= order.delivered_at ? new Date(order.delivered_at).toLocaleDateString() : '' %></div>
-          </div>
+          <% }); %>
         </div>
       </div>
     </div>
@@ -523,14 +536,11 @@
         <div class="form-row">
           <select name="status" required>
             <option value="">Select Status</option>
-            <option value="PENDING"    <%= order.status === 'PENDING'    ? 'selected' : '' %>>PENDING</option>
-            <option value="ORDERED"    <%= order.status === 'ORDERED'    ? 'selected' : '' %>>ORDERED</option>
-            <option value="RECEIVED"   <%= order.status === 'RECEIVED'   ? 'selected' : '' %>>RECEIVED</option>
-            <option value="INVOICED"   <%= order.status === 'INVOICED'   ? 'selected' : '' %>>INVOICED</option>
-            <option value="DISPATCHED" <%= order.status === 'DISPATCHED' ? 'selected' : '' %>>DISPATCHED</option>
-            <option value="DELIVERED"  <%= order.status === 'DELIVERED'  ? 'selected' : '' %>>DELIVERED</option>
+            <% allSteps.forEach(step => { %>
+              <option value="<%= step %>" <%= order.status === step ? 'selected' : '' %>><%= step.toUpperCase() %></option>
+            <% }); %>
           </select>
-          <button type="submit" class="btn btn-primary">Update</button>
+          <button type="submit" class="btn btn-primary">Update Status</button>
         </div>
       </form>
     </div>

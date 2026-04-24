@@ -12,5 +12,6 @@ router.post('/login', controller.login);
 router.post('/register', isAdmin, controller.register);
 
 router.get('/logout', controller.logout);
+router.get('/user-by-email/:email', controller.searchUserByEmail);
 
 module.exports = router;
